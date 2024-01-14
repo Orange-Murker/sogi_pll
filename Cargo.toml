@@ -1,0 +1,14 @@
+[package]
+name = "sogi_pll"
+version = "0.1.0"
+edition = "2021"
+description = "SOGI-PLL imlementation"
+repository = "https://github.com/Orange-Murker/sogi_pll"
+license = "MIT OR Apache-2.0"
+keywords = ["sogi", "pll", "sogi-pll", "phase", "locked", "loop"]
+categories = ["embedded", "no-std", "no-std::no-alloc"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+pid = "4.0.0"
