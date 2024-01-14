@@ -22,7 +22,6 @@
 //! ```
 //! K, Kp, Ki for 50Hz taken from [here](https://ieeexplore.ieee.org/document/6636494)
 
-
 use core::f32::consts::{PI, SQRT_2};
 
 use pid::Pid;

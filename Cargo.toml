@@ -5,7 +5,7 @@ edition = "2021"
 description = "SOGI-PLL imlementation"
 repository = "https://github.com/Orange-Murker/sogi_pll"
 license = "MIT OR Apache-2.0"
-keywords = ["sogi", "pll", "sogi-pll", "phase", "locked", "loop"]
+keywords = ["sogi", "pll", "phase", "locked", "loop"]
 categories = ["embedded", "no-std", "no-std::no-alloc"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
