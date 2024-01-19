@@ -1,6 +1,6 @@
 [package]
 name = "sogi_pll"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "SOGI-PLL imlementation"
 repository = "https://github.com/Orange-Murker/sogi_pll"
@@ -11,4 +11,4 @@ categories = ["embedded", "no-std", "no-std::no-alloc"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pid = "4.0.0"
+micromath = "2.1.0"

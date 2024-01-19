@@ -22,36 +22,43 @@
 //! ```
 //! K, Kp, Ki for 50Hz taken from [here](https://ieeexplore.ieee.org/document/6636494)
 
-use core::f32::consts::{PI, SQRT_2};
+#![no_std]
 
-use pid::Pid;
+use core::f32::consts::{FRAC_1_SQRT_2, PI};
 
-const SQRT_1_2: f32 = 1.0 / SQRT_2;
+use micromath::F32Ext;
+
+const PI2: f32 = PI * 2.0;
 
 struct ThirdOrderIntegrator {
-    sample_time: f32,
-    samples: [f32; 3],
+    /// Gain is sample_time / 12
+    integrator_gain: f32,
+    z1: f32,
+    z2: f32,
+    z3: f32,
 }
 
 impl ThirdOrderIntegrator {
     /// Create a new integrator with a given sample time
-    fn new(sample_time: f32) -> Self {
+    fn new(integrator_gain: f32) -> Self {
         Self {
-            sample_time,
-            samples: [0.0; 3],
+            integrator_gain,
+            z1: 0.0,
+            z2: 0.0,
+            z3: 0.0,
         }
     }
 
     /// Update the integrator with a new input
     fn update(&mut self, x: f32) {
-        self.samples[2] = self.samples[1];
-        self.samples[1] = self.samples[0];
-        self.samples[0] += x * (self.sample_time / 12.0);
+        self.z3 = self.z2;
+        self.z2 = self.z1;
+        self.z1 += x * self.integrator_gain;
     }
 
     /// Get the current value of the integrator
     fn value(&self) -> f32 {
-        self.samples[0] * 23.0 - self.samples[1] * 16.0 + self.samples[2] * 5.0
+        self.z1 * 23.0 - self.z2 * 16.0 + self.z3 * 5.0
     }
 }
 
@@ -65,10 +72,11 @@ pub struct Sogi<T> {
 impl Sogi<f32> {
     /// Create a new SOGI with a given k and sample time(used for the integrators)
     pub fn new(k: f32, sample_time: f32) -> Self {
+        let integrator_gain = sample_time / 12.0;
         Self {
             k,
-            integrator_1: ThirdOrderIntegrator::new(sample_time),
-            integrator_2: ThirdOrderIntegrator::new(sample_time),
+            integrator_1: ThirdOrderIntegrator::new(integrator_gain),
+            integrator_2: ThirdOrderIntegrator::new(integrator_gain),
         }
     }
 
@@ -89,8 +97,9 @@ impl Sogi<f32> {
 }
 
 fn alpha_beta_to_q(alpha: f32, beta: f32, theta: f32) -> f32 {
-    // let d = alpha * theta.cos() + beta * theta.sin();
-    -alpha * theta.sin() + beta * theta.cos()
+    let (sin, cos) = theta.sin_cos();
+    // let d = alpha * cos + beta * sin;
+    -alpha * sin + beta * cos
 }
 
 /// Configuration for the SOGI-PLL
@@ -100,21 +109,27 @@ pub struct PllConfig {
     pub pi_proportional_gain: f32,
     pub pi_integral_gain: f32,
     pub omega_zero: f32,
-    pub frequency_limit: f32,
 }
 
 /// Result returned by the SOGI-PLL
 pub struct PllResult {
+    pub v_alpha: f32,
     pub v_beta: f32,
+    pub omega: f32,
     pub theta: f32,
-    pub v_rms: f32,
+}
+
+impl PllResult {
+    pub fn v_rms(&self) -> f32 {
+        FRAC_1_SQRT_2 * (self.v_alpha * self.v_alpha + self.v_beta * self.v_beta).sqrt()
+    }
 }
 
 /// SOGI-PLL implementation
 pub struct SogiPll {
     config: PllConfig,
     sogi: Sogi<f32>,
-    pid: Pid<f32>,
+    pi_integral: f32,
     pi_value: f32,
     z1: f32,
 }
@@ -124,14 +139,10 @@ impl SogiPll {
     pub fn new(config: PllConfig) -> SogiPll {
         let sogi = Sogi::new(config.sogi_k, config.sample_time);
 
-        let mut pid = Pid::new(0.0, config.frequency_limit);
-        pid.p(config.pi_proportional_gain, config.frequency_limit);
-        pid.i(config.pi_integral_gain, config.frequency_limit);
-
         SogiPll {
             config,
             sogi,
-            pid,
+            pi_integral: 0.0,
             pi_value: 0.0,
             z1: 0.0,
         }
@@ -144,19 +155,17 @@ impl SogiPll {
 
         let q = alpha_beta_to_q(v_alpha, v_beta, self.z1);
 
-        self.z1 = (omega * self.config.sample_time + self.z1) % (2.0 * PI);
+        self.z1 = (omega * self.config.sample_time + self.z1) % PI2;
 
-        // The controller internally does setpoint - measured to get the error
-        // We are supplying the error directly so we need to negate it
-        let pid_out = self.pid.next_control_output(-q);
-        self.pi_value = pid_out.output;
-
-        let v_rms = SQRT_1_2 * (v_alpha.powi(2) + v_beta.powi(2)).sqrt();
+        self.pi_integral += self.pi_value * self.config.sample_time;
+        self.pi_value =
+            q * self.config.pi_proportional_gain + self.pi_integral * self.config.pi_integral_gain;
 
         PllResult {
+            v_alpha,
             v_beta,
+            omega,
             theta: self.z1,
-            v_rms,
         }
     }
 }
