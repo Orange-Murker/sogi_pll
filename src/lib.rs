@@ -1,6 +1,6 @@
 //! SOGI-PLL implementation
 //!
-//! Based on: <https://www.researchgate.net/publication/345738110_Instantaneous_Symmetrical_Component_Estimator_Using_Second_Order_Generalized_Integrator_under_Distorted_Voltage_Conditions>
+//! Based on: <https://ieeexplore.ieee.org/document/1711988>
 //!
 //!
 //! Usage:
