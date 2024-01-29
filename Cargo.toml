@@ -1,6 +1,6 @@
 [package]
 name = "sogi_pll"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "SOGI-PLL imlementation"
 repository = "https://github.com/Orange-Murker/sogi_pll"
@@ -12,3 +12,7 @@ categories = ["embedded", "no-std", "no-std::no-alloc"]
 
 [dependencies]
 micromath = "2.1.0"
+
+[dev-dependencies]
+plotters = "0.3.5"
+rand = "0.8.5"

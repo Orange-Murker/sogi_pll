@@ -29,6 +29,7 @@ use core::f32::consts::{FRAC_1_SQRT_2, PI};
 use micromath::F32Ext;
 
 const PI2: f32 = PI * 2.0;
+const FRAC_1_2PI: f32 = 1.0 / PI2;
 
 struct ThirdOrderIntegrator {
     /// Gain is sample_time / 12
@@ -122,6 +123,10 @@ pub struct PllResult {
 impl PllResult {
     pub fn v_rms(&self) -> f32 {
         FRAC_1_SQRT_2 * (self.v_alpha * self.v_alpha + self.v_beta * self.v_beta).sqrt()
+    }
+
+    pub fn frequency_rad(&self) -> f32 {
+        self.omega * FRAC_1_2PI
     }
 }
 
